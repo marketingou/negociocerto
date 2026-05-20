@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Negócio Certo | GOU Odonto</title>
+  <style>
+    :root {
+      --azul:        #1565C0;
+      --azul-hover:  #0D47A1;
+      --azul-claro:  #E3F2FD;
+      --cinza:       #757575;
+      --cinza-claro: #F5F5F5;
+      --cinza-borda: #E0E0E0;
+      --branco:      #FFFFFF;
+      --alerta-bg:   #FFF8E1;
+      --alerta-brd:  #FFB300;
+      --alerta-txt:  #7B5800;
+      --danger:      #E53935;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--cinza-claro);
+      color: #222;
+      min-height: 100vh;
+    }
+
+    /* ── ADMIN BAR ─────────────────────────────── */
+    #adminBar {
+      display: none;
+      background: var(--alerta-bg);
+      border-bottom: 3px solid var(--alerta-brd);
+      text-align: center;
+      padding: 7px 16px;
+      font-size: 0.83rem;
+      color: var(--alerta-txt);
+      font-weight: 600;
+    }
+    #adminBar a { color: var(--alerta-txt); font-weight: 700; }
+
+    /* ── HEADER ────────────────────────────────── */
+    header {
+      background: var(--azul);
+      color: var(--branco);
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    }
+
+    .logo {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      white-space: nowrap;
+    }
+    .logo span { color: #90CAF9; }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 2px solid rgba(255,255,255,.45);
+      color: var(--branco);
+      padding: 7px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: .85rem;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .nav-btn:hover, .nav-btn.active {
+      background: var(--branco);
+      color: var(--azul);
+      border-color: var(--branco);
+    }
+
+    /* ── MAIN ──────────────────────────────────── */
+    main {
+      max-width: 820px;
+      margin: 28px auto;
+      padding: 0 16px;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── BOTÕES ────────────────────────────────── */
+    .btn-primary {
+      background: var(--azul);
+      color: var(--branco);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .2s;
+    }
+    .btn-primary:hover { background: var(--azul-hover); }
+
+    .btn-sec {
+      background: var(--cinza-claro);
+      color: var(--cinza);
+      border: 1px solid var(--cinza-borda);
+      padding: 9px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .9rem;
+    }
+
+    .btn-icon-edit {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--azul);
+      font-size: .82rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .btn-icon-edit:hover { background: var(--azul-claro); }
+
+    .btn-icon-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--danger);
+      font-size: .82rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .btn-icon-del:hover { background: #FFEBEE; }
+
+    /* ── ADMIN TOOLBAR (acima do feed / fornecedores) ── */
+    .admin-toolbar {
+      display: none;
+      margin-bottom: 18px;
+    }
+    .admin-mode .admin-toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ── AÇÕES INLINE (botões editar/excluir nos cards) */
+    .card-admin-actions {
+      display: none;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .admin-mode .card-admin-actions { display: flex; }
+
+    /* ── EMPTY STATE ────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--cinza);
+    }
+    .empty-state svg { opacity: .35; margin-bottom: 14px; }
+    .empty-state p { font-size: .95rem; }
+
+    /* ── LOADING ────────────────────────────────── */
+    .loading {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--cinza);
+      font-size: .95rem;
+    }
+
+    /* ── POST CARD (feed) ───────────────────────── */
+    .post-card {
+      background: var(--branco);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+
+    .post-card img {
+      width: 100%;
+      max-height: 520px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .post-body {
+      padding: 16px 18px 14px;
+    }
+
+    .post-caption {
+      color: #2c2c2c;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      font-size: .97rem;
+    }
+
+    .post-meta {
+      margin-top: 10px;
+      font-size: .75rem;
+      color: var(--cinza);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-expira {
+      background: #E3F2FD;
+      color: var(--azul);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: .73rem;
+      font-weight: 600;
+    }
+
+    /* ── FORNECEDORES ───────────────────────────── */
+    .cat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2.5px solid var(--azul);
+      padding-bottom: 8px;
+      margin: 28px 0 12px;
+    }
+
+    .cat-title {
+      color: var(--azul);
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .cat-admin-btns {
+      display: none;
+      gap: 6px;
+      align-items: center;
+    }
+    .admin-mode .cat-admin-btns { display: flex; }
+
+    .fornecedor-card {
+      background: var(--branco);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.07);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .forn-icon {
+      width: 42px;
+      height: 42px;
+      background: var(--azul-claro);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .forn-info { flex: 1; min-width: 0; }
+    .forn-info h3 { font-size: 1rem; font-weight: 700; color: #1a1a1a; }
+    .forn-info p {
+      font-size: .83rem;
+      color: var(--cinza);
+      margin-top: 3px;
+      line-height: 1.45;
+    }
+
+    /* ── MODAL ──────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--branco);
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      width: 100%;
+      max-width: 460px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,.22);
+    }
+
+    .modal h2 {
+      color: var(--azul);
+      font-size: 1.15rem;
+      margin-bottom: 22px;
+    }
+
+    .form-group { margin-bottom: 15px; }
+
+    .form-group label {
+      display: block;
+      font-size: .82rem;
+      color: var(--cinza);
+      font-weight: 600;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid var(--cinza-borda);
+      border-radius: 8px;
+      font-size: .95rem;
+      outline: none;
+      font-family: inherit;
+      transition: border-color .2s;
+      background: var(--branco);
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus { border-color: var(--azul); }
+    .form-group textarea { resize: vertical; min-height: 100px; }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 22px;
+    }
+
+    .error-msg {
+      color: var(--danger);
+      font-size: .83rem;
+      margin-top: 6px;
+      display: none;
+    }
+
+    /* ── PROGRESSO UPLOAD ───────────────────────── */
+    #uploadProgress {
+      display: none;
+      font-size: .82rem;
+      color: var(--azul);
+      margin-top: 6px;
+    }
+
+    /* ── RESPONSIVO ─────────────────────────────── */
+    @media (max-width: 600px) {
+      .logo { font-size: 1.1rem; }
+      .nav-btn { padding: 6px 11px; font-size: .78rem; }
+      header { padding: 0 12px; }
+      main { margin: 16px auto; }
+      .modal { padding: 22px 18px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ADMIN BAR -->
+<div id="adminBar">
+  🔧 Modo Administrador ativo &nbsp;|&nbsp; <a href="#" onclick="fazerLogout();return false;">Sair</a>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Negócio <span>Certo</span></div>
+  <nav>
+    <button class="nav-btn active" id="btnNovidades" onclick="showSection('novidades')">📢 Novidades</button>
+    <button class="nav-btn" id="btnFornecedores" onclick="showSection('fornecedores')">🤝 Fornecedores</button>
+    <button class="nav-btn" id="btnLogin" onclick="abrirLogin()">🔑 Entrar</button>
+  </nav>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- ── NOVIDADES ───────────────────── -->
+  <section id="sectionNovidades" class="section active">
+    <div class="admin-toolbar">
+      <button class="btn-primary" onclick="abrirModalPost()">＋ Nova publicação</button>
+    </div>
+    <div id="feedContainer"><div class="loading">Carregando novidades…</div></div>
+  </section>
+
+  <!-- ── FORNECEDORES ────────────────── -->
+  <section id="sectionFornecedores" class="section">
+    <div class="admin-toolbar">
+      <button class="btn-primary" onclick="abrirModalCategoria()">＋ Nova categoria</button>
+    </div>
+    <div id="fornecedoresContainer"><div class="loading">Carregando fornecedores…</div></div>
+  </section>
+
+</main>
+
+<!-- ════════════════════════════════════════════════
+     MODAIS
+════════════════════════════════════════════════ -->
+
+<!-- Modal Login -->
+<div class="modal-overlay" id="modalLogin">
+  <div class="modal">
+    <h2>🔑 Acesso Administrativo</h2>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" placeholder="admin@gouodonto.com.br" />
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="loginSenha" placeholder="••••••••"
+             onkeydown="if(event.key==='Enter')fazerLogin()" />
+    </div>
+    <div class="error-msg" id="loginErro">E-mail ou senha incorretos.</div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="fecharModal('modalLogin')">Cancelar</button>
+      <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Post -->
+<div class="modal-overlay" id="modalPost">
+  <div class="modal">
+    <h2 id="modalPostTitulo">📢 Nova publicação</h2>
+    <div class="form-group">
+      <label>Imagem (JPEG / PNG)</label>
+      <input type="file" id="postImagem" accept="image/*" />
+      <div id="uploadProgress">⏳ Enviando imagem…</div>
+    </div>
+    <div class="form-group">
+      <label>Legenda / Texto</label>
+      <textarea id="postLegenda"
+        placeholder="Ex: 🎉 Promoção exclusiva! Use o cupom GOUBEM20 e ganhe 20% de desconto em materiais dentários até 30/06."
+      ></textarea>
+    </div>
+    <input type="hidden" id="postEditId" />
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="fecharModal('modalPost')">Cancelar</button>
+      <button class="btn-primary" id="btnSalvarPost" onclick="salvarPost()">Publicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Categoria -->
+<div class="modal-overlay" id="modalCategoria">
+  <div class="modal">
+    <h2 id="modalCategoriaTitulo">📁 Nova categoria</h2>
+    <div class="form-group">
+      <label>Nome da categoria</label>
+      <input type="text" id="categoriaNome" placeholder="Ex: Materiais Dentários" />
+    </div>
+    <input type="hidden" id="categoriaEditId" />
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="fecharModal('modalCategoria')">Cancelar</button>
+      <button class="btn-primary" onclick="salvarCategoria()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Fornecedor -->
+<div class="modal-overlay" id="modalFornecedor">
+  <div class="modal">
+    <h2 id="modalFornecedorTitulo">🤝 Novo fornecedor</h2>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="fornecedorCategoria"></select>
+    </div>
+    <div class="form-group">
+      <label>Nome da empresa</label>
+      <input type="text" id="fornecedorEmpresa" placeholder="Ex: Dental Supplies Ltda" />
+    </div>
+    <div class="form-group">
+      <label>Nome do consultor</label>
+      <input type="text" id="fornecedorConsultor" placeholder="Ex: João Silva" />
+    </div>
+    <div class="form-group">
+      <label>Telefone do consultor</label>
+      <input type="tel" id="fornecedorTelefone" placeholder="Ex: (34) 99999-9999" />
+    </div>
+    <input type="hidden" id="fornecedorEditId" />
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="fecharModal('modalFornecedor')">Cancelar</button>
+      <button class="btn-primary" onclick="salvarFornecedor()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     FIREBASE SDK + LÓGICA
+════════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, doc,
+  deleteDoc, updateDoc, query, orderBy, where, Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// ╔══════════════════════════════════════════════╗
+// ║  SUBSTITUA AQUI COM SUAS CREDENCIAIS FIREBASE ║
+// ╚══════════════════════════════════════════════╝
+const firebaseConfig = {
+  apiKey:            "AIzaSyBGvwJv2CUVCAPt-MqTosPNNHFNZ1uPwPY",
+  authDomain:        "negocio-certo-bef58.firebaseapp.com",
+  projectId:         "negocio-certo-bef58",
+  storageBucket:     "negocio-certo-bef58.firebasestorage.app",
+  messagingSenderId: "237594464177",
+  appId:             "1:237594464177:web:b4e3c8a774ee27ae0ab790"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+// ── CLOUDINARY (upload de imagens) ─────────────
+const CLOUDINARY_CLOUD  = 'dz5d9ovqq';
+const CLOUDINARY_PRESET = 'avolek9r';
+
+async function uploadImagem(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,
+    { method: 'POST', body: formData }
+  );
+  const json = await res.json();
+  return json.secure_url;
+}
+
+// ── ESTADO ─────────────────────────────────────
+let isAdmin = false;
+
+// ── AUTH ────────────────────────────────────────
+onAuthStateChanged(auth, user => {
+  isAdmin = !!user;
+  atualizarUI();
+  carregarFeed();
+  carregarFornecedores();
+});
+
+window.abrirLogin = () => {
+  document.getElementById('loginErro').style.display = 'none';
+  abrirModal('modalLogin');
+};
+
+window.fazerLogin = async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginSenha').value;
+  const erroEl = document.getElementById('loginErro');
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+    fecharModal('modalLogin');
+  } catch {
+    erroEl.style.display = 'block';
+  }
+};
+
+window.fazerLogout = async () => { await signOut(auth); };
+
+function atualizarUI() {
+  const adminBar = document.getElementById('adminBar');
+  const btnLogin = document.getElementById('btnLogin');
+  if (isAdmin) {
+    adminBar.style.display = 'block';
+    btnLogin.style.display = 'none';
+    document.body.classList.add('admin-mode');
+  } else {
+    adminBar.style.display = 'none';
+    btnLogin.style.display = '';
+    document.body.classList.remove('admin-mode');
+  }
+}
+
+// ── NAVEGAÇÃO ───────────────────────────────────
+window.showSection = (id) => {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn:not(#btnLogin)').forEach(b => b.classList.remove('active'));
+  const cap = id.charAt(0).toUpperCase() + id.slice(1);
+  document.getElementById('section' + cap).classList.add('active');
+  document.getElementById('btn' + cap).classList.add('active');
+};
+
+// ── MODAIS ──────────────────────────────────────
+window.abrirModal  = (id) => document.getElementById(id).classList.add('open');
+window.fecharModal = (id) => document.getElementById(id).classList.remove('open');
+document.querySelectorAll('.modal-overlay').forEach(m =>
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); })
+);
+
+// ════════════════════════════════════════════════
+//  FEED / NOVIDADES
+// ════════════════════════════════════════════════
+async function carregarFeed() {
+  const container = document.getElementById('feedContainer');
+  container.innerHTML = '<div class="loading">Carregando novidades…</div>';
+
+  // --- Exclusão automática de posts com > 20 dias ---
+  const limite20 = Timestamp.fromDate(
+    new Date(Date.now() - 20 * 24 * 60 * 60 * 1000)
+  );
+  try {
+    const velhos = await getDocs(
+      query(collection(db, 'posts'), where('criadoEm', '<', limite20))
+    );
+    for (const d of velhos.docs) {
+      await deleteDoc(doc(db, 'posts', d.id));
+    }
+  } catch {}
+
+  // --- Carregar posts recentes ---
+  const snap = await getDocs(
+    query(collection(db, 'posts'), orderBy('criadoEm', 'desc'))
+  );
+
+  if (snap.empty) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.3">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        <p>Nenhuma publicação disponível no momento.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  snap.forEach(d => {
+    const data   = d.data();
+    const criado = data.criadoEm ? data.criadoEm.toDate() : new Date();
+    const dataStr = criado.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const expira  = new Date(criado.getTime() + 20 * 24 * 60 * 60 * 1000);
+    const expiraStr = expira.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+
+    container.innerHTML += `
+      <div class="post-card" id="post-${d.id}">
+        ${data.imagemUrl
+          ? `<img src="${data.imagemUrl}" alt="Publicação" loading="lazy" />`
+          : ''}
+        <div class="post-body">
+          ${data.legenda
+            ? `<p class="post-caption">${data.legenda.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</p>`
+            : ''}
+          <div class="post-meta">
+            <span>📅 ${dataStr}</span>
+            <span class="badge-expira">⏳ Expira em ${expiraStr}</span>
+          </div>
+          <div class="card-admin-actions">
+            <button class="btn-icon-del"
+              onclick="deletarPost('${d.id}')">
+              🗑 Excluir
+            </button>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
+// --- Abrir modal novo post ---
+window.abrirModalPost = () => {
+  document.getElementById('postImagem').value  = '';
+  document.getElementById('postLegenda').value = '';
+  document.getElementById('postEditId').value  = '';
+  document.getElementById('modalPostTitulo').textContent = '📢 Nova publicação';
+  document.getElementById('uploadProgress').style.display = 'none';
+  abrirModal('modalPost');
+};
+
+// --- Salvar post ---
+window.salvarPost = async () => {
+  const imagemInput = document.getElementById('postImagem');
+  const legenda     = document.getElementById('postLegenda').value.trim();
+  const progEl      = document.getElementById('uploadProgress');
+  const btnSalvar   = document.getElementById('btnSalvarPost');
+
+  if (!legenda && !imagemInput.files[0]) {
+    alert('Adicione ao menos uma imagem ou uma legenda.');
+    return;
+  }
+
+  btnSalvar.disabled = true;
+  let imagemUrl = '';
+
+  if (imagemInput.files[0]) {
+    progEl.style.display = 'block';
+    imagemUrl = await uploadImagem(imagemInput.files[0]);
+    progEl.style.display = 'none';
+  }
+
+  await addDoc(collection(db, 'posts'), {
+    imagemUrl,
+    legenda,
+    criadoEm: Timestamp.now()
+  });
+
+  btnSalvar.disabled = false;
+  fecharModal('modalPost');
+  carregarFeed();
+};
+
+// --- Deletar post ---
+window.deletarPost = async (id) => {
+  if (!confirm('Tem certeza que deseja excluir esta publicação?')) return;
+  await deleteDoc(doc(db, 'posts', id));
+  document.getElementById('post-' + id)?.remove();
+  if (!document.querySelector('.post-card')) carregarFeed();
+};
+
+// ════════════════════════════════════════════════
+//  FORNECEDORES
+// ════════════════════════════════════════════════
+async function carregarFornecedores() {
+  const container = document.getElementById('fornecedoresContainer');
+  container.innerHTML = '<div class="loading">Carregando fornecedores…</div>';
+
+  const [catSnap, fornSnap] = await Promise.all([
+    getDocs(query(collection(db, 'categorias'), orderBy('nome'))),
+    getDocs(collection(db, 'fornecedores'))
+  ]);
+
+  if (catSnap.empty) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.3">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+        <p>Nenhum fornecedor cadastrado ainda.</p>
+      </div>`;
+    return;
+  }
+
+  // Agrupar fornecedores por categoria
+  const fornByCategoria = {};
+  fornSnap.forEach(fDoc => {
+    const f = fDoc.data();
+    if (!fornByCategoria[f.categoriaId]) fornByCategoria[f.categoriaId] = [];
+    fornByCategoria[f.categoriaId].push({ id: fDoc.id, ...f });
+  });
+
+  container.innerHTML = '';
+  catSnap.forEach(catDoc => {
+    const cat = catDoc.data();
+    const forns = fornByCategoria[catDoc.id] || [];
+
+    let html = `
+      <div>
+        <div class="cat-header">
+          <span class="cat-title">📁 ${cat.nome}</span>
+          <div class="cat-admin-btns">
+            <button class="btn-icon-edit"
+              onclick="editarCategoria('${catDoc.id}','${cat.nome.replace(/'/g,"\\'")}')">
+              ✏️ Editar
+            </button>
+            <button class="btn-icon-del"
+              onclick="deletarCategoria('${catDoc.id}')">
+              🗑 Excluir
+            </button>
+            <button class="btn-primary" style="padding:5px 12px;font-size:.8rem;margin-left:4px"
+              onclick="abrirModalFornecedor('${catDoc.id}')">
+              ＋ Fornecedor
+            </button>
+          </div>
+        </div>`;
+
+    if (forns.length === 0) {
+      html += `<p style="color:var(--cinza);font-size:.85rem;padding:6px 0 16px">
+        Nenhum fornecedor nesta categoria.</p>`;
+    } else {
+      forns.forEach(f => {
+        const eEsc  = f.empresa.replace(/'/g,"\\'");
+        const cEsc  = f.consultor.replace(/'/g,"\\'");
+        const tEsc  = f.telefone.replace(/'/g,"\\'");
+        const catId = f.categoriaId;
+        html += `
+          <div class="fornecedor-card" id="forn-${f.id}">
+            <div class="forn-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                   stroke="#1565C0" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+              </svg>
+            </div>
+            <div class="forn-info">
+              <h3>${f.empresa}</h3>
+              <p>👤 ${f.consultor}</p>
+              <p>📞 <a href="tel:${f.telefone}" style="color:var(--azul)">${f.telefone}</a></p>
+              <div class="card-admin-actions">
+                <button class="btn-icon-edit"
+                  onclick="editarFornecedor('${f.id}','${catId}','${eEsc}','${cEsc}','${tEsc}')">
+                  ✏️ Editar
+                </button>
+                <button class="btn-icon-del"
+                  onclick="deletarFornecedor('${f.id}')">
+                  🗑 Excluir
+                </button>
+              </div>
+            </div>
+          </div>`;
+      });
+    }
+
+    html += `</div>`;
+    container.innerHTML += html;
+  });
+}
+
+// ── Categoria ───────────────────────────────────
+window.abrirModalCategoria = () => {
+  document.getElementById('categoriaNome').value  = '';
+  document.getElementById('categoriaEditId').value = '';
+  document.getElementById('modalCategoriaTitulo').textContent = '📁 Nova categoria';
+  abrirModal('modalCategoria');
+};
+
+window.editarCategoria = (id, nome) => {
+  document.getElementById('categoriaNome').value   = nome;
+  document.getElementById('categoriaEditId').value = id;
+  document.getElementById('modalCategoriaTitulo').textContent = '✏️ Editar categoria';
+  abrirModal('modalCategoria');
+};
+
+window.salvarCategoria = async () => {
+  const nome   = document.getElementById('categoriaNome').value.trim();
+  const editId = document.getElementById('categoriaEditId').value;
+  if (!nome) { alert('Digite o nome da categoria.'); return; }
+  if (editId) {
+    await updateDoc(doc(db, 'categorias', editId), { nome });
+  } else {
+    await addDoc(collection(db, 'categorias'), { nome });
+  }
+  fecharModal('modalCategoria');
+  carregarFornecedores();
+};
+
+window.deletarCategoria = async (id) => {
+  if (!confirm('Excluir esta categoria e todos os fornecedores dela?')) return;
+  const forns = await getDocs(
+    query(collection(db, 'fornecedores'), where('categoriaId', '==', id))
+  );
+  for (const d of forns.docs) await deleteDoc(doc(db, 'fornecedores', d.id));
+  await deleteDoc(doc(db, 'categorias', id));
+  carregarFornecedores();
+};
+
+// ── Fornecedor ──────────────────────────────────
+window.abrirModalFornecedor = async (categoriaId = '') => {
+  document.getElementById('fornecedorEmpresa').value   = '';
+  document.getElementById('fornecedorConsultor').value = '';
+  document.getElementById('fornecedorTelefone').value  = '';
+  document.getElementById('fornecedorEditId').value    = '';
+  document.getElementById('modalFornecedorTitulo').textContent = '🤝 Novo fornecedor';
+  await preencherCategorias(categoriaId);
+  abrirModal('modalFornecedor');
+};
+
+window.editarFornecedor = async (id, catId, empresa, consultor, telefone) => {
+  document.getElementById('fornecedorEmpresa').value   = empresa;
+  document.getElementById('fornecedorConsultor').value = consultor;
+  document.getElementById('fornecedorTelefone').value  = telefone;
+  document.getElementById('fornecedorEditId').value    = id;
+  document.getElementById('modalFornecedorTitulo').textContent = '✏️ Editar fornecedor';
+  await preencherCategorias(catId);
+  abrirModal('modalFornecedor');
+};
+
+async function preencherCategorias(selectedId) {
+  const sel  = document.getElementById('fornecedorCategoria');
+  sel.innerHTML = '';
+  const snap = await getDocs(query(collection(db, 'categorias'), orderBy('nome')));
+  snap.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.id;
+    opt.textContent = d.data().nome;
+    if (d.id === selectedId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+window.salvarFornecedor = async () => {
+  const empresa    = document.getElementById('fornecedorEmpresa').value.trim();
+  const consultor  = document.getElementById('fornecedorConsultor').value.trim();
+  const telefone   = document.getElementById('fornecedorTelefone').value.trim();
+  const categoriaId = document.getElementById('fornecedorCategoria').value;
+  const editId     = document.getElementById('fornecedorEditId').value;
+
+  if (!empresa) { alert('Digite o nome da empresa.'); return; }
+
+  if (editId) {
+    await updateDoc(doc(db, 'fornecedores', editId),
+      { empresa, consultor, telefone, categoriaId });
+  } else {
+    await addDoc(collection(db, 'fornecedores'),
+      { empresa, consultor, telefone, categoriaId });
+  }
+  fecharModal('modalFornecedor');
+  carregarFornecedores();
+};
+
+window.deletarFornecedor = async (id) => {
+  if (!confirm('Excluir este fornecedor?')) return;
+  await deleteDoc(doc(db, 'fornecedores', id));
+  document.getElementById('forn-' + id)?.remove();
+};
+</script>
+
+</body>
+</html>
