@@ -190,8 +190,7 @@
 
     .post-card img {
       width: 100%;
-      max-height: 520px;
-      object-fit: cover;
+      height: auto;
       display: block;
     }
 
@@ -607,6 +606,18 @@ document.querySelectorAll('.modal-overlay').forEach(m =>
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); })
 );
 
+// ── Formatar texto estilo WhatsApp ──────────────
+function formatarTexto(texto) {
+  return texto
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+    .replace(/_(.*?)_/g, '<em>$1</em>')
+    .replace(/~(.*?)~/g, '<del>$1</del>')
+    .replace(/\n/g, '<br>');
+}
+
 // ════════════════════════════════════════════════
 //  FEED / NOVIDADES
 // ════════════════════════════════════════════════
@@ -660,7 +671,7 @@ async function carregarFeed() {
           : ''}
         <div class="post-body">
           ${data.legenda
-            ? `<p class="post-caption">${data.legenda.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</p>`
+            ? `<p class="post-caption">${formatarTexto(data.legenda)}</p>`
             : ''}
           <div class="post-meta">
             <span>📅 ${dataStr}</span>
