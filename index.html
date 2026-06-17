@@ -768,8 +768,8 @@ async function carregarFornecedores() {
   container.innerHTML = '<div class="loading">Carregando fornecedores…</div>';
 
   const [catSnap, fornSnap] = await Promise.all([
-    getDocs(query(collection(db, 'categorias'), orderBy('nome'))),
-    getDocs(query(collection(db, 'fornecedores'), orderBy('empresa')))
+    getDocs(collection(db, 'categorias')),
+    getDocs(collection(db, 'fornecedores'))
   ]);
 
   if (catSnap.empty) {
@@ -786,6 +786,11 @@ async function carregarFornecedores() {
     return;
   }
 
+  // Ordenar categorias alfabeticamente (client-side)
+  const catDocs = catSnap.docs.sort((a, b) =>
+    a.data().nome.localeCompare(b.data().nome, 'pt-BR')
+  );
+
   // Agrupar fornecedores por categoria
   const fornByCategoria = {};
   fornSnap.forEach(fDoc => {
@@ -795,9 +800,11 @@ async function carregarFornecedores() {
   });
 
   container.innerHTML = '';
-  catSnap.forEach(catDoc => {
+  catDocs.forEach(catDoc => {
     const cat = catDoc.data();
-    const forns = fornByCategoria[catDoc.id] || [];
+    const forns = (fornByCategoria[catDoc.id] || []).sort((a, b) =>
+      a.empresa.localeCompare(b.empresa, 'pt-BR')
+    );
 
     const bodyId = `cat-body-${catDoc.id}`;
     const chevId = `cat-chev-${catDoc.id}`;
