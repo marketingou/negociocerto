@@ -230,14 +230,36 @@
       justify-content: space-between;
       border-bottom: 2.5px solid var(--azul);
       padding-bottom: 8px;
-      margin: 28px 0 12px;
+      margin: 28px 0 0;
+      cursor: pointer;
+      user-select: none;
     }
+    .cat-header:hover .cat-title { opacity: .8; }
 
     .cat-title {
       color: var(--azul);
       font-size: 1.15rem;
       font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+
+    .cat-chevron {
+      font-size: .85rem;
+      transition: transform .25s;
+      color: var(--azul);
+      display: inline-block;
+    }
+    .cat-chevron.fechado { transform: rotate(-90deg); }
+
+    .cat-body {
+      overflow: hidden;
+      transition: max-height .3s ease;
+      max-height: 2000px;
+      margin-bottom: 4px;
+    }
+    .cat-body.fechado { max-height: 0; }
 
     .cat-admin-btns {
       display: none;
@@ -747,7 +769,7 @@ async function carregarFornecedores() {
 
   const [catSnap, fornSnap] = await Promise.all([
     getDocs(query(collection(db, 'categorias'), orderBy('nome'))),
-    getDocs(collection(db, 'fornecedores'))
+    getDocs(query(collection(db, 'fornecedores'), orderBy('empresa')))
   ]);
 
   if (catSnap.empty) {
@@ -777,11 +799,17 @@ async function carregarFornecedores() {
     const cat = catDoc.data();
     const forns = fornByCategoria[catDoc.id] || [];
 
+    const bodyId = `cat-body-${catDoc.id}`;
+    const chevId = `cat-chev-${catDoc.id}`;
+
     let html = `
       <div>
-        <div class="cat-header">
-          <span class="cat-title">📁 ${cat.nome}</span>
-          <div class="cat-admin-btns">
+        <div class="cat-header" onclick="toggleCategoria('${bodyId}','${chevId}')">
+          <span class="cat-title">
+            <span id="${chevId}" class="cat-chevron">▼</span>
+            📁 ${cat.nome}
+          </span>
+          <div class="cat-admin-btns" onclick="event.stopPropagation()">
             <button class="btn-icon-edit"
               onclick="editarCategoria('${catDoc.id}','${cat.nome.replace(/'/g,"\\'")}')">
               ✏️ Editar
@@ -795,10 +823,11 @@ async function carregarFornecedores() {
               ＋ Fornecedor
             </button>
           </div>
-        </div>`;
+        </div>
+        <div class="cat-body" id="${bodyId}">`;
 
     if (forns.length === 0) {
-      html += `<p style="color:var(--cinza);font-size:.85rem;padding:6px 0 16px">
+      html += `<p style="color:var(--cinza);font-size:.85rem;padding:10px 0 16px">
         Nenhum fornecedor nesta categoria.</p>`;
     } else {
       forns.forEach(f => {
@@ -807,7 +836,7 @@ async function carregarFornecedores() {
         const tEsc  = f.telefone.replace(/'/g,"\\'");
         const catId = f.categoriaId;
         html += `
-          <div class="fornecedor-card" id="forn-${f.id}">
+          <div class="fornecedor-card" id="forn-${f.id}" style="margin-top:10px">
             <div class="forn-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
                    stroke="#1565C0" stroke-width="2">
@@ -834,7 +863,7 @@ async function carregarFornecedores() {
       });
     }
 
-    html += `</div>`;
+    html += `</div></div>`;
     container.innerHTML += html;
   });
 }
@@ -929,6 +958,13 @@ window.salvarFornecedor = async () => {
   }
   fecharModal('modalFornecedor');
   carregarFornecedores();
+};
+
+window.toggleCategoria = (bodyId, chevId) => {
+  const body = document.getElementById(bodyId);
+  const chev = document.getElementById(chevId);
+  body.classList.toggle('fechado');
+  chev.classList.toggle('fechado');
 };
 
 window.deletarFornecedor = async (id) => {
